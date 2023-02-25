@@ -34,18 +34,50 @@
 (defn maybe-move-mario-y
   [db delta]
   (let [vy (get-in db [:mario :vy])
-        y (get-in db [:mario :y])]
-    (cond (or (pos? y)
+        y (get-in db [:mario :y])
+        x (get-in db [:mario :x])
+        magic 45
+        boxes (:boxes db)]
+    (cond (and (contains? (:directions db) "ArrowUp")
+               (zero? vy))
+          (-> db
+              (assoc-in [:mario :vy] 0.6)
+              (update-in [:mario :y] (fn[v] (- v 0.6))))
+
+          (or (neg? y)
               (not (zero? vy)))
           (let [gravity 0.001
                 new-y (min 0 (- y (* vy delta)))
-                new-vy (if (zero? new-y) 0 (- vy (* gravity delta)))]
-            (-> db
-                (assoc-in [:mario :y] new-y)
-                (assoc-in [:mario :vy] new-vy)))
+                new-vy (if (zero? new-y) 0 (- vy (* gravity delta)))
+                colliding-boxes (->> boxes
+                                     (filter (fn [[bx by]]
+                                               (and
+                                                 (<= (- bx 30) x (+ bx 45))
+                                                 (<= (- new-y) (+ by magic) (- y))))))]
+            (when (> (count colliding-boxes) 0) (println "boxy"))
+
+            (if (empty? colliding-boxes)
+              (-> db
+                  (assoc-in [:mario :y] new-y)
+                  (assoc-in [:mario :vy] new-vy))
+              (-> db
+                  (assoc-in [:mario :y] (-> colliding-boxes
+                                            (first)
+                                            (second)
+                                            (-)
+                                            (- magic)
+                                            ))
+                  (assoc-in [:mario :vy] 0)
+                  )))
 
           (contains? (:directions db) "ArrowUp")
-          (assoc-in db [:mario :vy] 0.6)
+          (-> db
+              (assoc-in [:mario :vy] 0.6)
+              (update-in [:mario :y] (fn[v] (- v 0.6))))
+
+          (and (zero? y)
+               (not (zero? vy)))
+          (assoc-in db [:mario :vy] 0)
 
           :else
           db)))
@@ -63,6 +95,7 @@
 
 (def initial-state
   {:directions #{}
+   :boxes      #{}
    :mario      {:x         10
                 :vx        0
                 :y         0
