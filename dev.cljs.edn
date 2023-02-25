@@ -1,0 +1,10 @@
+{
+ ; The :main option defines a root namespace for our build. When we include the compiled artifact on a webpage
+ ; it will pull in all the code that our :main namespace depends on.
+ :main          mario.main
+
+ :optimizations :none
+
+ ; The :output-to option is “the path to the JavaScript file that will be output”.
+ :output-to     "resources/public/js/main.js"
+ }
