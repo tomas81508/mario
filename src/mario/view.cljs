@@ -26,10 +26,12 @@
         mario-image-padding 8
         mario-x (get-in db [:mario :x])
         mario-y (get-in db [:mario :y])]
-    [:div
-     [:div (str "Directions: " (:directions db))]
-     [:div (str "Mario: " (:mario db))]
-     [:div (str "Boxes: " (:boxes db))]
+    [:div {:style {:position "relative"}}
+     [:div {:style {:position "absolute"
+                    :z-index 1
+                    :font-size "50px"
+                    :transform "translateX(120px) translateY(210px)"}}
+      "Nisse"]
      [:div {:style {:position "relative"}}
       (->> db
            (:boxes)
@@ -38,6 +40,7 @@
                            {:key      idx
                             :view-box "0 0 50 50"
                             :style    {:position "absolute"
+                                       :pointer-events "none"
                                        :width    50
                                        :height   50
                                        :top      (- magic-number y)
@@ -56,12 +59,17 @@
                                                (.getBoundingClientRect)
                                                (.-top))
                                      x (justify-coord (.-clientX e))
-                                     y (justify-coord (- magic-number (.-clientY e) (- sky-y) -50))]
-                                 (js/console.log sky-y)
-                                 (swap! db-atom update :boxes conj [x (- y mario-image-padding)])))
+                                     y (- (justify-coord (- magic-number (.-clientY e) (- sky-y) -50))
+                                          mario-image-padding)
+                                     operation (if (contains? (:boxes db) [x y]) disj conj)]
+                                   (swap! db-atom update :boxes operation [x y])))
              :style    {:background-color "rgb(174, 238, 238)"
                         :height           "500px"
                         :width            "100%"}}]
       [:div {:style {:background-color "rgb(74, 163, 41)"
                      :height           "100px"
-                     :width            "100%"}}]]]))
+                     :width            "100%"}}]]
+     ;[:div (str "Directions: " (:directions db))]
+     ;[:div (str "Mario: " (:mario db))]
+     ;[:div (str "Boxes: " (:boxes db))]
+     ]))

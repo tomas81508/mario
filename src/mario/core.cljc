@@ -46,7 +46,7 @@
 
           (or (neg? y)
               (not (zero? vy)))
-          (let [gravity 0.001
+          (let [gravity 0.0008
                 new-y (min 0 (- y (* vy delta)))
                 new-vy (if (zero? new-y) 0 (- vy (* gravity delta)))
                 colliding-boxes (->> boxes
@@ -54,7 +54,6 @@
                                                (and
                                                  (<= (- bx 30) x (+ bx 45))
                                                  (<= (- new-y) (+ by magic) (- y))))))]
-            (when (> (count colliding-boxes) 0) (println "boxy"))
 
             (if (empty? colliding-boxes)
               (-> db
@@ -101,4 +100,3 @@
                 :y         0
                 :vy        0
                 :direction :right}})
-
