@@ -1,3 +1,5 @@
+^{:watch-dirs ["src"]
+  :ring-server-options {:port 9002}}
 {
  ; The :main option defines a root namespace for our build. When we include the compiled artifact on a webpage
  ; it will pull in all the code that our :main namespace depends on.

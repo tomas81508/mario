@@ -1,6 +1,8 @@
 (ns mario.view
   (:require [mario.db :refer [db-atom]]))
 
+(def sky-height 500)
+
 (defn get-mario-image-src
   [mario]
   (str "asset/"
@@ -13,63 +15,57 @@
              :else
              (if (= (:direction mario) :left) "left-walk" "right-walk"))))
 
-(defn justify-coord
-  [coord]
-  (-> coord
-      (quot 50)
-      (* 50)))
+(defn mario-component
+  [db]
+  (let [mario-x (get-in db [:mario :x])
+        mario-y (get-in db [:mario :y])
+        mario-image-height 70
+        mario-image-padding-bottom 8
+        mario-image-padding-left 25]
+    [:img {:src   (str (get-mario-image-src (:mario db)) ".gif")
+           :style (merge {:position         "absolute"
+                          :top              (+ sky-height
+                                               mario-image-padding-bottom
+                                               (- mario-y
+                                                  mario-image-height))
+                          :left             (- mario-x
+                                               mario-image-padding-left)
+                          :transform-origin "0 0"
+                          :transform        (str "scale(2)")}
+                         (when (:frames db)
+                           {:border           "1px solid red"}))}]))
 
 (defn app-component
   []
   (let [db (deref db-atom)
-        magic-number 458
-        mario-image-padding 8
-        mario-x (get-in db [:mario :x])
-        mario-y (get-in db [:mario :y])]
+        width (* (quot (:screen-width db) 50) 50)]
     [:div {:style {:position "relative"}}
      [:div {:style {:position "absolute"
-                    :z-index 1
-                    :font-size "50px"
-                    :transform "translateX(120px) translateY(210px)"}}
-      "Nisse"]
+                    :z-index  1}}
+      (->> (for [x (range 0 width 50)
+                 y (range 0 500 50)]
+             [x y])
+           (map-indexed (fn [index [x y]]
+                          (let [box [x (- sky-height y)]]
+                            [:div {:key      index
+                                   :style    (merge {:position "absolute"
+                                                     :width    50
+                                                     :height   50
+                                                     :top      y
+                                                     :left     x}
+                                                    (when (:frames db)
+                                                      {:border   "1px solid gray"})
+                                                    (when (contains? (:boxes db) box)
+                                                      {:background-color "brown"}))
+                                   :on-click (fn []
+                                               (let [operation (if (contains? (:boxes db) box) disj conj)]
+                                                 (swap! db-atom update :boxes operation box)))}]))))]
      [:div {:style {:position "relative"}}
-      (->> db
-           (:boxes)
-           (map-indexed (fn [idx [x y]]
-                          [:svg
-                           {:key      idx
-                            :view-box "0 0 50 50"
-                            :style    {:position "absolute"
-                                       :pointer-events "none"
-                                       :width    50
-                                       :height   50
-                                       :top      (- magic-number y)
-                                       :left     x}}
-                           [:rect {:x    0 :y 0 :width 50 :height 50
-                                   :fill "brown"}]])))
-      [:img {:src   (str (get-mario-image-src (:mario db)) ".gif")
-             :style {:position  "absolute"
-                     :top       (+ magic-number mario-y)
-                     :left      mario-x
-                     ;:border    "1px solid red"
-                     :transform (str "scale(2)")}}]
+      [mario-component db]
       [:div {:id       "the-sky"
-             :on-click (fn [e] (let [sky-y (-> "the-sky"
-                                               (js/document.getElementById)
-                                               (.getBoundingClientRect)
-                                               (.-top))
-                                     x (justify-coord (.-clientX e))
-                                     y (- (justify-coord (- magic-number (.-clientY e) (- sky-y) -50))
-                                          mario-image-padding)
-                                     operation (if (contains? (:boxes db) [x y]) disj conj)]
-                                   (swap! db-atom update :boxes operation [x y])))
              :style    {:background-color "rgb(174, 238, 238)"
                         :height           "500px"
                         :width            "100%"}}]
       [:div {:style {:background-color "rgb(74, 163, 41)"
                      :height           "100px"
-                     :width            "100%"}}]]
-     ;[:div (str "Directions: " (:directions db))]
-     ;[:div (str "Mario: " (:mario db))]
-     ;[:div (str "Boxes: " (:boxes db))]
-     ]))
+                     :width            "100%"}}]]]))

@@ -3,8 +3,7 @@
 
 (defmulti handle-event
           "Event handler. Events should contain :name and :data."
-          (fn [{name :name :as event}]
-            (println "event:" event)
+          (fn [{name :name}]
             name))
 
 (defmethod handle-event

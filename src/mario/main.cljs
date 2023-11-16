@@ -8,9 +8,7 @@
             [mario.core :as core]))
 
 
-(defn now []
-  (-> (js/Date.) .getTime))
-
+(defn now [] (-> (js/Date.) .getTime))
 
 (defn render
   []
@@ -21,13 +19,18 @@
 
 (when-not (deref db-atom)
   (render)
-  (reset! db-atom core/initial-state)
+  (reset! db-atom (merge core/initial-state
+                         {:screen-width (.-innerWidth js/window)
+                          :frames       false
+                          :boxes        core/clojure-boxes}))
   (add-watch tick-atom :app-watcher
              (fn [_ _ _ {delta :delta}]
                (swap! db-atom core/update-model delta)))
-  (js/setInterval (fn []
-                    (swap! tick-atom update-tick (now)))
+  (js/setInterval (fn [] (swap! tick-atom update-tick (now)))
                   20)
+  (.addEventListener js/window
+                     "resize"
+                     (fn [] (swap! db-atom assoc :screen-width (.-innerWidth js/window))))
   (.addEventListener (.-body js/document)
                      "keyup"
                      (fn [e]
